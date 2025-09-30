@@ -265,16 +265,16 @@ func createMainUI(myWindow fyne.Window, entries []TOTPEntry) {
 
 func showAddEntryDialog(parent fyne.Window) {
 	titleEntry := widget.NewEntry()
-	titleEntry.SetPlaceHolder("Enter service name (e.g., Google, GitHub)")
+	titleEntry.SetPlaceHolder("Enter service name")
 
 	secretEntry := widget.NewEntry()
-	secretEntry.SetPlaceHolder("Enter secret key")
+	secretEntry.SetPlaceHolder("Enter hash")
 	secretEntry.Password = true
 
 	content := container.NewVBox(
 		widget.NewLabel("Service Name:"),
 		titleEntry,
-		widget.NewLabel("Secret Key:"),
+		widget.NewLabel("Hash:"),
 		secretEntry,
 	)
 
