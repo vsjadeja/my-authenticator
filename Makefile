@@ -71,3 +71,8 @@ deb: build
 	@chmod 755 $(BUILD_DIR)/deb/usr/bin/$(APP_NAME)
 	@dpkg-deb --build $(BUILD_DIR)/deb $(BUILD_DIR)/$(APP_NAME).deb
 	@echo "✅ Debian package created: $(BUILD_DIR)/$(APP_NAME).deb"
+
+.PHONY: run
+run: clean build
+	@echo "🚀 Running $(APP_NAME)..."
+	@$(BINARY)

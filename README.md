@@ -17,9 +17,10 @@ A secure, desktop Time-based One-Time Password (TOTP) authenticator application 
 - **🔒 Secure Storage**: All TOTP secrets are encrypted using AES-GCM with PBKDF2 key derivation
 - **⏱️ Auto-Refresh**: TOTP codes automatically update every 30 seconds with visual progress indicator
 - **📱 Modern GUI**: Clean, intuitive interface built with Fyne framework
-- **📋 Easy Copy**: One-click copy TOTP codes to clipboard
+- **📋 Easy Copy**: One-click copy TOTP codes to clipboard with non-intrusive notifications
 - **📤 QR Code Export**: Generate QR codes for importing entries into other authenticator apps
 - **🎨 Icon-Based Interface**: Modern icon-only buttons for a clean look
+- **🔔 Smart Notifications**: Temporary notifications in top-right corner that auto-disappear
 - **📦 Debian Package**: Easy installation with .deb package generation
 
 ## 🚀 Quick Start

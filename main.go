@@ -28,6 +28,38 @@ import (
 const encryptionPassword = "Divorcee0-Equator6-Footman5-Showing7-Scorch3"
 const salt = "Dicing1-Stray2-Bulldog2-Prevalent7-Drearily3-Taekwondo8-Diligence2-Balcony3"
 const dbFileName = "securedata.bin"
+const notificationVisibility time.Duration = 1 * time.Second
+
+// showNotification displays a temporary notification in the top-right corner
+func showNotification(parent fyne.Window, title, message string) {
+	// Create notification content
+	titleLabel := widget.NewLabel(title)
+	titleLabel.TextStyle = fyne.TextStyle{Bold: true}
+
+	messageLabel := widget.NewLabel(message)
+	messageLabel.Wrapping = fyne.TextWrapWord
+
+	// Create notification container with padding
+	content := container.NewVBox(titleLabel, messageLabel)
+	notificationCard := container.NewBorder(nil, nil, nil, nil, content)
+
+	// Create popup that appears in top-right corner
+	popup := widget.NewModalPopUp(notificationCard, parent.Canvas())
+	popup.Resize(fyne.NewSize(280, 80))
+
+	// Position in top-right corner
+	canvasSize := parent.Canvas().Size()
+	popup.Move(fyne.NewPos(canvasSize.Width-290, 10))
+	popup.Show()
+
+	// Auto-hide after a seconds
+	go func() {
+		fyne.DoAndWait(func() {
+			time.Sleep(notificationVisibility)
+			popup.Hide()
+		})
+	}()
+}
 
 type TOTPEntry struct {
 	Title string `json:"title"`
@@ -139,7 +171,7 @@ func createMainUI(myWindow fyne.Window, entries []TOTPEntry) {
 
 	// Settings button with icon only
 	settingsButton := widget.NewButtonWithIcon("", theme.SettingsIcon(), func() {
-		dialog.ShowInformation("Settings", "Settings functionality coming soon!", myWindow)
+		showNotification(myWindow, "Settings", "Settings functionality coming soon!")
 	})
 	settingsButton.Importance = widget.LowImportance
 
@@ -195,7 +227,7 @@ func createMainUI(myWindow fyne.Window, entries []TOTPEntry) {
 			if app := fyne.CurrentApp(); app != nil {
 				app.Clipboard().SetContent(currentCode)
 				// Show brief confirmation
-				dialog.ShowInformation("Copied", fmt.Sprintf("code copied: %s", currentCode), myWindow)
+				showNotification(myWindow, "Copied", fmt.Sprintf("Code copied: %s", currentCode))
 			}
 		})
 		copyButton.Resize(fyne.NewSize(24, 24))
@@ -308,7 +340,7 @@ func showAddEntryDialog(parent fyne.Window) {
 		}
 
 		// Show success message
-		dialog.ShowInformation("Success", "New authenticator entry added successfully!", parent)
+		showNotification(parent, "Success", "New authenticator entry added successfully!")
 
 		// Refresh main UI
 		createMainUI(parent, entries)
@@ -317,7 +349,7 @@ func showAddEntryDialog(parent fyne.Window) {
 
 func showExportDialog(parent fyne.Window, entries []TOTPEntry) {
 	if len(entries) == 0 {
-		dialog.ShowInformation("Show QR", "No entries to show QR codes for!", parent)
+		showNotification(parent, "Show QR", "No entries to show QR codes for!")
 		return
 	}
 
