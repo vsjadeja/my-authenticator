@@ -18,7 +18,8 @@ A secure, desktop Time-based One-Time Password (TOTP) authenticator application 
 - **⏱️ Auto-Refresh**: TOTP codes automatically update every 30 seconds with visual progress indicator
 - **📱 Modern GUI**: Clean, intuitive interface built with Fyne framework
 - **📋 Easy Copy**: One-click copy TOTP codes to clipboard with non-intrusive notifications
-- **📤 QR Code Export**: Generate QR codes for importing entries into other authenticator apps
+- **�️ Easy Management**: Add and remove entries with simple dropdown selection
+- **�📤 QR Code Export**: Generate QR codes for importing entries into other authenticator apps
 - **🎨 Icon-Based Interface**: Modern icon-only buttons for a clean look
 - **🔔 Smart Notifications**: Temporary notifications in top-right corner that auto-disappear
 - **📦 Debian Package**: Easy installation with .deb package generation
@@ -114,6 +115,13 @@ sudo apt-get install build-essential libgtk-3-dev
 - **Copy Code**: Click the copy icon next to any TOTP code
 - **Auto-Refresh**: Codes automatically update every 30 seconds
 - **Progress Bar**: Visual indicator shows time remaining until next refresh
+
+### Removing Entries
+
+1. Click the **🗑️ Remove** button in the top toolbar
+2. Select the entry you want to remove from the dropdown
+3. Click **Remove** to confirm (⚠️ This action cannot be undone!)
+4. Entry is permanently deleted and UI updates automatically
 
 ### Exporting Entries
 

@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -25,10 +26,13 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 )
 
-const encryptionPassword = "Divorcee0-Equator6-Footman5-Showing7-Scorch3"
-const salt = "Dicing1-Stray2-Bulldog2-Prevalent7-Drearily3-Taekwondo8-Diligence2-Balcony3"
-const dbFileName = "securedata.bin"
-const notificationVisibility time.Duration = 1 * time.Second
+const encryptionPassword = "Divorcee0-Equator6-Footman5-Showing7-Scorch3"                  // TODO: can be made configurable from settings. current one should be default.
+const salt = "Dicing1-Stray2-Bulldog2-Prevalent7-Drearily3-Taekwondo8-Diligence2-Balcony3" // TODO: can be made configurable from settings
+const dbFileName = "securedata.bin"                                                        // TODO: can be made configurable from settings. expected file with real path.
+const notificationVisibility time.Duration = 1 * time.Second                               // TODO: can be made configurable from settings
+
+// Regex for Base32 (RFC 4648)
+var base32Regex = regexp.MustCompile(`^[A-Z2-7]+=*$`)
 
 // showNotification displays a temporary notification in the top-right corner
 func showNotification(parent fyne.Window, title, message string) {
@@ -181,7 +185,13 @@ func createMainUI(myWindow fyne.Window, entries []TOTPEntry) {
 	})
 	exportButton.Importance = widget.LowImportance
 
-	topButtonRow := container.NewHBox(addButton, exportButton, settingsButton)
+	// Remove button with icon only
+	removeButton := widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
+		showRemoveDialog(myWindow, entries)
+	})
+	removeButton.Importance = widget.LowImportance
+
+	topButtonRow := container.NewHBox(addButton, exportButton, removeButton, settingsButton)
 
 	// Create a container to hold all TOTP entries
 	var entryWidgets []fyne.CanvasObject
@@ -303,6 +313,7 @@ func showAddEntryDialog(parent fyne.Window) {
 	secretEntry.SetPlaceHolder("Enter hash")
 	secretEntry.Password = true
 
+	// Create dialog content
 	content := container.NewVBox(
 		widget.NewLabel("Service Name:"),
 		titleEntry,
@@ -398,6 +409,73 @@ func showExportDialog(parent fyne.Window, entries []TOTPEntry) {
 
 		// Show QR code dialog
 		showQRCodeDialog(parent, *selectedEntry)
+	}, parent)
+}
+
+func showRemoveDialog(parent fyne.Window, entries []TOTPEntry) {
+	if len(entries) == 0 {
+		showNotification(parent, "Remove Entry", "No entries to remove!")
+		return
+	}
+
+	// Create entry selection
+	var entryNames []string
+	for _, entry := range entries {
+		entryNames = append(entryNames, entry.Title)
+	}
+
+	entrySelect := widget.NewSelect(entryNames, nil)
+	if len(entryNames) > 0 {
+		entrySelect.SetSelected(entryNames[0])
+	}
+
+	content := container.NewVBox(
+		widget.NewLabel("Select Entry to Remove:"),
+		entrySelect,
+		widget.NewLabel(""),
+		widget.NewLabel("⚠️ This action cannot be undone!"),
+	)
+
+	dialog.ShowCustomConfirm("Remove Entry", "Remove", "Cancel", content, func(confirmed bool) {
+		if !confirmed {
+			return
+		}
+
+		selectedTitle := entrySelect.Selected
+		if selectedTitle == "" {
+			dialog.ShowError(fmt.Errorf("please select an entry"), parent)
+			return
+		}
+
+		// Find and remove the selected entry
+		var updatedEntries []TOTPEntry
+		found := false
+		for _, entry := range entries {
+			if entry.Title != selectedTitle {
+				updatedEntries = append(updatedEntries, entry)
+			} else {
+				found = true
+			}
+		}
+
+		if !found {
+			showNotification(parent, "Error", "Entry not found!")
+			return
+		}
+
+		// Save updated entries
+		data, _ := json.Marshal(updatedEntries)
+		err := encryptAndSave(data)
+		if err != nil {
+			dialog.ShowError(fmt.Errorf("error saving entries: %v", err), parent)
+			return
+		}
+
+		// Show success message
+		showNotification(parent, "Success", fmt.Sprintf("Entry '%s' removed successfully!", selectedTitle))
+
+		// Refresh main UI
+		createMainUI(parent, updatedEntries)
 	}, parent)
 }
 
