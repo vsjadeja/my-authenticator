@@ -30,6 +30,8 @@ const encryptionPassword = "Divorcee0-Equator6-Footman5-Showing7-Scorch3"       
 const salt = "Dicing1-Stray2-Bulldog2-Prevalent7-Drearily3-Taekwondo8-Diligence2-Balcony3" // TODO: can be made configurable from settings
 const dbFileName = "securedata.bin"                                                        // TODO: can be made configurable from settings. expected file with real path.
 const notificationVisibility time.Duration = 1 * time.Second                               // TODO: can be made configurable from settings
+const loginUsername = "admin"                                                              // static login username
+const loginPassword = "Vsmk2102^"                                                          // static login password
 
 // Regex for Base32 (RFC 4648)
 var base32Regex = regexp.MustCompile(`^[A-Z2-7]+=*$`)
@@ -147,22 +149,84 @@ func (p *AutoProgressBar) StopAutoUpdate() {
 var globalAutoProgress *AutoProgressBar
 
 func main() {
-	// Create a new app
 	myApp := app.New()
 	myWindow := myApp.NewWindow("🔐 My Authenticator")
 
-	// Load entries from encrypted file
-	entries, err := decryptAndLoadEntries()
-	if err != nil {
-		fmt.Println("Error loading entries:", err)
-		// Show error dialog and continue with empty entries
-		entries = []TOTPEntry{}
+	showLoginUI(myWindow)
+	myWindow.ShowAndRun()
+}
+
+func showLoginUI(myWindow fyne.Window) {
+	usernameEntry := widget.NewEntry()
+	usernameEntry.SetPlaceHolder("Username")
+	usernameEntry.Resize(fyne.NewSize(550, 40))
+
+	passwordEntry := widget.NewPasswordEntry()
+	passwordEntry.SetPlaceHolder("Password")
+	passwordEntry.Resize(fyne.NewSize(550, 40))
+
+	errorLabel := widget.NewLabel("")
+	errorLabel.Alignment = fyne.TextAlignCenter
+	errorLabel.Wrapping = fyne.TextWrapWord
+	errorLabel.Hide()
+
+	loginButton := widget.NewButton("Login", func() {
+		username := usernameEntry.Text
+		password := passwordEntry.Text
+
+		if username == "" || password == "" {
+			errorLabel.SetText("Please enter username and password.")
+			errorLabel.Show()
+			return
+		}
+
+		if username != loginUsername || password != loginPassword {
+			errorLabel.SetText("Invalid username or password.")
+			errorLabel.Show()
+			return
+		}
+
+		entries, err := decryptAndLoadEntries()
+		if err != nil {
+			fmt.Println("Error loading entries:", err)
+			dialog.ShowError(err, myWindow)
+			entries = []TOTPEntry{}
+		}
+
+		createMainUI(myWindow, entries)
+	})
+	loginButton.Importance = widget.HighImportance
+
+	loginForm := container.NewGridWithColumns(2,
+		widget.NewLabel("Username"), usernameEntry,
+		widget.NewLabel("Password"), passwordEntry,
+	)
+
+	infoLabel := widget.NewLabel("Enter your credentials to continue.")
+	infoLabel.Alignment = fyne.TextAlignCenter
+	infoLabel.Wrapping = fyne.TextWrapWord
+
+	usernameEntry.OnChanged = func(_ string) {
+		errorLabel.Hide()
+	}
+	passwordEntry.OnChanged = func(_ string) {
+		errorLabel.Hide()
 	}
 
-	// Create main UI
-	createMainUI(myWindow, entries)
+	loginContent := container.NewVBox(
+		widget.NewLabelWithStyle("Login", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		infoLabel,
+		container.NewVBox(
+			container.NewPadded(loginForm),
+		),
+		loginButton,
+		errorLabel,
+	)
+	loginCard := widget.NewCard("", "", loginContent)
 
-	myWindow.ShowAndRun()
+	myWindow.SetContent(container.NewMax(container.NewPadded(loginCard)))
+	myWindow.Resize(fyne.NewSize(300, 150))
+	myWindow.CenterOnScreen()
 }
 
 func createMainUI(myWindow fyne.Window, entries []TOTPEntry) {
@@ -191,7 +255,12 @@ func createMainUI(myWindow fyne.Window, entries []TOTPEntry) {
 	})
 	removeButton.Importance = widget.LowImportance
 
-	topButtonRow := container.NewHBox(addButton, exportButton, removeButton, settingsButton)
+	logoutButton := widget.NewButtonWithIcon("", theme.CancelIcon(), func() {
+		myWindow.Close()
+	})
+	logoutButton.Importance = widget.LowImportance
+
+	topButtonRow := container.NewHBox(addButton, exportButton, removeButton, settingsButton, logoutButton)
 
 	// Create a container to hold all TOTP entries
 	var entryWidgets []fyne.CanvasObject
