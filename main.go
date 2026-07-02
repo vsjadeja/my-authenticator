@@ -170,31 +170,35 @@ func showLoginUI(myWindow fyne.Window) {
 	errorLabel.Wrapping = fyne.TextWrapWord
 	errorLabel.Hide()
 
-	loginButton := widget.NewButton("Login", func() {
-		username := usernameEntry.Text
-		password := passwordEntry.Text
+	handleLogin := func() {
+		{
+			username := usernameEntry.Text
+			password := passwordEntry.Text
 
-		if username == "" || password == "" {
-			errorLabel.SetText("Please enter username and password.")
-			errorLabel.Show()
-			return
+			if username == "" || password == "" {
+				errorLabel.SetText("Please enter username and password.")
+				errorLabel.Show()
+				return
+			}
+
+			if username != loginUsername || password != loginPassword {
+				errorLabel.SetText("Invalid username or password.")
+				errorLabel.Show()
+				return
+			}
+
+			entries, err := decryptAndLoadEntries()
+			if err != nil {
+				fmt.Println("Error loading entries:", err)
+				dialog.ShowError(err, myWindow)
+				entries = []TOTPEntry{}
+			}
+
+			createMainUI(myWindow, entries)
 		}
+	}
 
-		if username != loginUsername || password != loginPassword {
-			errorLabel.SetText("Invalid username or password.")
-			errorLabel.Show()
-			return
-		}
-
-		entries, err := decryptAndLoadEntries()
-		if err != nil {
-			fmt.Println("Error loading entries:", err)
-			dialog.ShowError(err, myWindow)
-			entries = []TOTPEntry{}
-		}
-
-		createMainUI(myWindow, entries)
-	})
+	loginButton := widget.NewButton("Login", handleLogin)
 	loginButton.Importance = widget.HighImportance
 
 	loginForm := container.NewGridWithColumns(2,
@@ -213,6 +217,10 @@ func showLoginUI(myWindow fyne.Window) {
 		errorLabel.Hide()
 	}
 
+	passwordEntry.OnSubmitted = func(_ string) {
+		handleLogin()
+	}
+
 	loginContent := container.NewVBox(
 		widget.NewLabelWithStyle("Login", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		infoLabel,
@@ -227,6 +235,7 @@ func showLoginUI(myWindow fyne.Window) {
 	myWindow.SetContent(container.NewMax(container.NewPadded(loginCard)))
 	myWindow.Resize(fyne.NewSize(300, 150))
 	myWindow.CenterOnScreen()
+	myWindow.Canvas().Focus(usernameEntry)
 }
 
 func createMainUI(myWindow fyne.Window, entries []TOTPEntry) {
